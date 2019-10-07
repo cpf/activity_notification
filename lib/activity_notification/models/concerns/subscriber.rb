@@ -9,7 +9,7 @@ module ActivityNotification
       # Has many subscription instances of this target.
       # @scope instance
       # @return [Array<Subscription>, Mongoid::Criteria<Subscription>] Array or database query of subscriptions of this target
-      has_many_records :subscriptions,
+      has_many_records :notifications_subscriptions,
         class_name: "::ActivityNotification::Subscription",
         as: :target,
         dependent: :delete_all
@@ -30,7 +30,7 @@ module ActivityNotification
     # @param [Hash] key Key of the notification for subscription
     # @return [Subscription] Configured subscription instance
     def find_subscription(key)
-      subscriptions.where(key: key).first
+      notifications_subscriptions.where(key: key).first
     end
 
     # Gets subscription of the target and notification key.
@@ -50,7 +50,7 @@ module ActivityNotification
     def create_subscription(subscription_params = {})
       created_at = Time.current
       if subscription_params[:subscribing] == false && subscription_params[:subscribing_to_email].nil?
-        subscription_params[:subscribing_to_email] = subscription_params[:subscribing] 
+        subscription_params[:subscribing_to_email] = subscription_params[:subscribing]
       end
       subscription = Subscription.new(subscription_params)
       subscription.assign_attributes(target: self)
@@ -90,7 +90,7 @@ module ActivityNotification
     # @option options [Boolean]    :with_target            (false) If it includes target with subscriptions
     # @return [Array<Notificaion>] Configured subscription index of the target
     def subscription_index(options = {})
-      target_index = subscriptions.filtered_by_options(options)
+      target_index = notifications_subscriptions.filtered_by_options(options)
       target_index = options[:reverse] ? target_index.earliest_order : target_index.latest_order
       target_index = target_index.with_target if options[:with_target]
       options[:limit].present? ? target_index.limit(options[:limit]).to_a : target_index.to_a
@@ -109,7 +109,7 @@ module ActivityNotification
     # @option options [Array|Hash]    :custom_filter          (nil)   Custom subscription filter (e.g. ["created_at >= ?", time.hour.ago])
     # @return [Array<Notificaion>] Unconfigured notification keys of the target
     def notification_keys(options = {})
-      subscription_keys    = subscriptions.uniq_keys
+      subscription_keys    = notifications_subscriptions.uniq_keys
       target_notifications = notifications.filtered_by_options(options.select { |k, _| [:filtered_by_key, :custom_filter].include?(k) })
       target_notifications = options[:reverse] ? target_notifications.earliest_order : target_notifications.latest_order
       target_notifications = options[:limit].present? ? target_notifications.limit(options[:limit] + subscription_keys.size) : target_notifications
@@ -136,7 +136,7 @@ module ActivityNotification
       # @param [Boolean] subscribe_as_default Default subscription value to use when the subscription record does not configured
       # @return [Boolean] If the target subscribes to the notification
       def _subscribes_to_notification?(key, subscribe_as_default = ActivityNotification.config.subscribe_as_default)
-        evaluate_subscription(subscriptions.where(key: key).first, :subscribing?, subscribe_as_default)
+        evaluate_subscription(notifications_subscriptions.where(key: key).first, :subscribing?, subscribe_as_default)
       end
 
       # Returns if the target subscribes to the notification email.
@@ -147,7 +147,7 @@ module ActivityNotification
       # @param [Boolean] subscribe_as_default Default subscription value to use when the subscription record does not configured
       # @return [Boolean] If the target subscribes to the notification
       def _subscribes_to_notification_email?(key, subscribe_as_default = ActivityNotification.config.subscribe_as_default)
-        evaluate_subscription(subscriptions.where(key: key).first, :subscribing_to_email?, subscribe_as_default)
+        evaluate_subscription(notifications_subscriptions.where(key: key).first, :subscribing_to_email?, subscribe_as_default)
       end
       alias_method :_subscribes_to_email?, :_subscribes_to_notification_email?
 
@@ -161,7 +161,7 @@ module ActivityNotification
       # @return [Boolean] If the target subscribes to the specified optional target
       def _subscribes_to_optional_target?(key, optional_target_name, subscribe_as_default = ActivityNotification.config.subscribe_as_default)
         _subscribes_to_notification?(key, subscribe_as_default) &&
-          evaluate_subscription(subscriptions.where(key: key).first, :subscribing_to_optional_target?, subscribe_as_default, optional_target_name, subscribe_as_default)
+          evaluate_subscription(notifications_subscriptions.where(key: key).first, :subscribing_to_optional_target?, subscribe_as_default, optional_target_name, subscribe_as_default)
       end
 
     private

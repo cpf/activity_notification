@@ -12,10 +12,10 @@ shared_examples_for :subscriber do
     it "has many subscriptions" do
       subscription_1 = create(:subscription, target: test_instance, key: 'subscription_key_1')
       subscription_2 = create(:subscription, target: test_instance, key: 'subscription_key_2', created_at: subscription_1.created_at + 10.second)
-      expect(test_instance.subscriptions.count).to                eq(2)
-      expect(test_instance.subscriptions.earliest_order.first).to eq(subscription_1)
-      expect(test_instance.subscriptions.latest_order.first).to   eq(subscription_2)
-      expect(test_instance.subscriptions.latest_order.to_a).to    eq(ActivityNotification::Subscription.filtered_by_target(test_instance).latest_order.to_a)
+      expect(test_instance.notifications_subscriptions.count).to                eq(2)
+      expect(test_instance.notifications_subscriptions.earliest_order.first).to eq(subscription_1)
+      expect(test_instance.notifications_subscriptions.latest_order.first).to   eq(subscription_2)
+      expect(test_instance.notifications_subscriptions.latest_order.to_a).to    eq(ActivityNotification::Subscription.filtered_by_target(test_instance).latest_order.to_a)
     end
   end    
 
@@ -30,13 +30,13 @@ shared_examples_for :subscriber do
   describe "as public instance methods" do
     describe "#find_subscription" do
       before do
-        expect(test_instance.subscriptions.to_a).to be_empty
+        expect(test_instance.notifications_subscriptions.to_a).to be_empty
       end
 
       context "when the cofigured subscription exists" do
         it "returns subscription record" do
           subscription = test_instance.create_subscription(key: 'test_key')
-          expect(test_instance.subscriptions.reload.to_a).not_to be_empty
+          expect(test_instance.notifications_subscriptions.reload.to_a).not_to be_empty
           expect(test_instance.find_subscription('test_key')).to eq(subscription)
         end
       end
@@ -50,13 +50,13 @@ shared_examples_for :subscriber do
 
     describe "#find_or_create_subscription" do
       before do
-        expect(test_instance.subscriptions.to_a).to be_empty
+        expect(test_instance.notifications_subscriptions.to_a).to be_empty
       end
 
       context "when the cofigured subscription exists" do
         it "returns subscription record" do
           subscription = test_instance.create_subscription(key: 'test_key')
-          expect(test_instance.subscriptions.reload.to_a).not_to be_empty
+          expect(test_instance.notifications_subscriptions.reload.to_a).not_to be_empty
           expect(test_instance.find_or_create_subscription('test_key')).to eq(subscription)
         end
       end
@@ -70,14 +70,14 @@ shared_examples_for :subscriber do
 
     describe "#create_subscription" do
       before do
-        expect(test_instance.subscriptions.to_a).to be_empty
+        expect(test_instance.notifications_subscriptions.to_a).to be_empty
       end
 
       context "without params" do
         it "does not create a new subscription since it is invalid" do
           new_subscription = test_instance.create_subscription
           expect(new_subscription).to                        be_nil
-          expect(test_instance.subscriptions.reload.to_a).to be_empty
+          expect(test_instance.notifications_subscriptions.reload.to_a).to be_empty
         end
       end
 
@@ -87,7 +87,7 @@ shared_examples_for :subscriber do
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription.subscribing?).to           be_truthy
           expect(new_subscription.subscribing_to_email?).to  be_truthy
-          expect(test_instance.subscriptions.reload.size).to eq(1)
+          expect(test_instance.notifications_subscriptions.reload.size).to eq(1)
         end
       end
 
@@ -97,7 +97,7 @@ shared_examples_for :subscriber do
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription.subscribing?).to           be_falsey
           expect(new_subscription.subscribing_to_email?).to  be_falsey
-          expect(test_instance.subscriptions.reload.size).to eq(1)
+          expect(test_instance.notifications_subscriptions.reload.size).to eq(1)
         end
       end
 
@@ -107,7 +107,7 @@ shared_examples_for :subscriber do
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription.subscribing?).to           be_truthy
           expect(new_subscription.subscribing_to_email?).to  be_falsey
-          expect(test_instance.subscriptions.reload.size).to eq(1)
+          expect(test_instance.notifications_subscriptions.reload.size).to eq(1)
         end
       end
 
@@ -117,7 +117,7 @@ shared_examples_for :subscriber do
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription.subscribing?).to           be_truthy
           expect(new_subscription.subscribing_to_email?).to  be_falsey
-          expect(test_instance.subscriptions.reload.size).to eq(1)
+          expect(test_instance.notifications_subscriptions.reload.size).to eq(1)
         end
       end
 
@@ -126,7 +126,7 @@ shared_examples_for :subscriber do
           params = { key: 'key_1', subscribing: false, subscribing_to_email: true }
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription).to                        be_nil
-          expect(test_instance.subscriptions.reload.to_a).to be_empty
+          expect(test_instance.notifications_subscriptions.reload.to_a).to be_empty
         end
       end
 
@@ -138,7 +138,7 @@ shared_examples_for :subscriber do
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription.subscribing?).to                                     be_truthy
           expect(new_subscription.subscribing_to_optional_target?(:console_output)).to be_truthy
-          expect(test_instance.subscriptions.reload.size).to eq(1)
+          expect(test_instance.notifications_subscriptions.reload.size).to eq(1)
         end
       end
 
@@ -148,7 +148,7 @@ shared_examples_for :subscriber do
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription.subscribing?).to                                     be_truthy
           expect(new_subscription.subscribing_to_optional_target?(:console_output)).to be_falsey
-          expect(test_instance.subscriptions.reload.size).to eq(1)
+          expect(test_instance.notifications_subscriptions.reload.size).to eq(1)
         end
       end
 
@@ -158,7 +158,7 @@ shared_examples_for :subscriber do
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription.subscribing?).to                                     be_truthy
           expect(new_subscription.subscribing_to_optional_target?(:console_output)).to be_falsey
-          expect(test_instance.subscriptions.reload.size).to eq(1)
+          expect(test_instance.notifications_subscriptions.reload.size).to eq(1)
         end
       end
 
@@ -167,7 +167,7 @@ shared_examples_for :subscriber do
           params = { key: 'key_1', subscribing: false, optional_targets: { subscribing_to_console_output: true } }
           new_subscription = test_instance.create_subscription(params)
           expect(new_subscription).to                        be_nil
-          expect(test_instance.subscriptions.reload.to_a).to be_empty
+          expect(test_instance.notifications_subscriptions.reload.to_a).to be_empty
         end
       end
     end
